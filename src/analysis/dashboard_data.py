@@ -13,7 +13,6 @@ IMPORTANCE_DIR = REPORTS_DIR / "importance"
 from src.data_loader import load_secom
 from src.experiment.config_schema import ExperimentConfig
 from src.experiment.registry import ExperimentRegistry
-from src.pipelines.factory import build_pipeline
 
 
 @lru_cache(maxsize=4)
@@ -79,6 +78,8 @@ def fast_feature_importance() -> pd.DataFrame:
 
 @lru_cache(maxsize=2)
 def compute_feature_importance(exp_id: str, n_repeats: int = 5) -> pd.DataFrame:
+    from src.pipelines.factory import build_pipeline
+
     cfg = load_experiment_config(exp_id)
     X, y = load_secom()
     feature_names = get_feature_names(X)
