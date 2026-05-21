@@ -50,10 +50,14 @@ def _importance_path(exp_id: str) -> Path:
 
 
 def load_feature_importance(exp_id: str, *, allow_compute: bool = True) -> pd.DataFrame:
-    """Load precomputed importance, else fast MI proxy (Streamlit Cloud friendly)."""
+    """Load precomputed importance, else bundled fast MI table (no runtime fit)."""
     path = _importance_path(exp_id)
     if path.exists():
         return pd.read_csv(path)
+
+    fast_path = IMPORTANCE_DIR / "_fast_mi.csv"
+    if fast_path.exists():
+        return pd.read_csv(fast_path)
 
     if allow_compute:
         return compute_feature_importance(exp_id)
@@ -214,8 +218,6 @@ def analyze_misclassifications(oof: pd.DataFrame, X: pd.DataFrame, y: pd.Series,
         row = X.iloc[idx][profile_cols]
         target = fail_centroid if label == 1 else pass_centroid
         return float(np.nanmean(np.abs(row - target)))
-
-    df["centroid_dist"] = [centroid_dist(i, lbl) for i, lbl in zip(df.index, df.y_true)]
 
     label_suspect = []
     for idx, row in errors.iterrows():

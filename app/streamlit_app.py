@@ -85,8 +85,6 @@ def render_dashboard():
         st.session_state.last_exp = selected_exp
         st.session_state.advanced_loaded = False
 
-    mis = cached_misclassifications(selected_exp, threshold)
-
     tab1, tab2, tab3 = st.tabs(["📊 실험 결과", "🔬 입력 변수 분석", "🔍 오분류 심화 분석"])
 
     with tab1:
@@ -207,6 +205,8 @@ def render_dashboard():
 
     with tab3:
         st.header("오분류 심화 분석")
+        with st.spinner("오분류 분석 중..."):
+            mis = cached_misclassifications(selected_exp, threshold)
         err = mis["full"]
         cmp = None
         imp_df = None
