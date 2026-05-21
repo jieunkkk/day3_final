@@ -20,6 +20,7 @@ from src.analysis.dashboard_data import (
     compute_feature_importance,
     deep_eda_hints,
     load_experiment_config,
+    load_feature_importance,
     load_oof,
     load_pairwise_stats,
     load_registry_df,
@@ -63,12 +64,17 @@ with st.sidebar:
     st.metric("OOF F1", f"{row['f1_mean']:.3f}")
     st.metric("최적 Threshold", f"{threshold:.2f}")
 
-@st.cache_data(show_spinner="Feature Importance 계산 (1~3분)...")
-def cached_importance(exp_id: str):
-    return compute_feature_importance(exp_id)
+if st.session_state.get("last_exp") != selected_exp:
+    st.session_state.last_exp = selected_exp
+    st.session_state.advanced_loaded = False
 
-imp_df = cached_importance(selected_exp)
-cmp = compare_feature_groups(X, y, imp_df, top_k=20, bottom_k=20)
+@st.cache_data(show_spinner="Feature Importance 로딩...")
+def cached_importance(exp_id: str, *, full_permutation: bool = False) -> pd.DataFrame:
+    if full_permutation:
+        return compute_feature_importance(exp_id, n_repeats=3)
+    return load_feature_importance(exp_id, allow_compute=False)
+
+
 mis = analyze_misclassifications(oof, X, y, threshold)
 
 tab1, tab2, tab3 = st.tabs(["📊 실험 결과", "🔬 입력 변수 분석", "🔍 오분류 심화 분석"])
@@ -127,39 +133,59 @@ with tab2:
     st.header("입력 변수 (센서) 분석")
     st.info("Tabular 데이터 → Feature Importance + 통계 검定 (Grad-CAM 해당 없음)")
 
-    top_k = st.slider("Top/Bottom K", 5, 30, 20)
-    cmp = compare_feature_groups(X, y, imp_df, top_k=top_k, bottom_k=top_k)
-    fig_imp = px.bar(imp_df.head(25), x="importance", y="feature", orientation="h", title=f"Top 25 Permutation Importance ({selected_exp})")
-    fig_imp.update_layout(yaxis={"categoryorder": "total ascending"}, height=600)
-    st.plotly_chart(fig_imp, use_container_width=True)
+    c_load, c_full = st.columns(2)
+    with c_load:
+        if st.button("변수 중요도 로드", type="primary", use_container_width=True):
+            st.session_state.advanced_loaded = True
+    with c_full:
+        run_full = st.checkbox("정밀 Permutation Importance (1~3분)", value=False)
 
-    st.markdown(
-        f"**전처리**: {POLICY_LABELS['missing'].get(cfg.missing_policy)} · "
-        f"{POLICY_LABELS['outlier'].get(cfg.outlier_policy)} · "
-        f"{POLICY_LABELS['feature'].get(cfg.feature_policy)} · "
-        f"{POLICY_LABELS['sampling'].get(cfg.sampling_policy)}"
-    )
+    if not st.session_state.get("advanced_loaded"):
+        st.caption("실험 결과 탭은 즉시 표시됩니다. 변수·오분류 심화 분석은 여기서 로드하세요.")
+    else:
+        imp_df = cached_importance(selected_exp, full_permutation=run_full)
+        method = imp_df["method"].iloc[0] if "method" in imp_df.columns else "unknown"
+        st.success(f"로드 완료 — 방법: {method}")
 
-    cmp = compare_feature_groups(X, y, imp_df, top_k=top_k, bottom_k=top_k)
-    st.subheader("중요 vs 비중요 — Pass/Fail Mann-Whitney 비교")
-    if not cmp["detail"].empty:
-        st.dataframe(cmp["detail"].round(4), use_container_width=True)
-        top_sig = (cmp["detail"].loc[cmp["detail"]["group"] == "Top (중요)", "p_value"] < 0.05).mean()
-        bot_sig = (cmp["detail"].loc[cmp["detail"]["group"] == "Bottom (비중요)", "p_value"] < 0.05).mean()
-        st.markdown(f"**해석**: 중요 변수 유의 비율 {top_sig*100:.0f}% vs 비중요 {bot_sig*100:.0f}% — "
-                    f"{'중요 변수가 통계적으로 더 강한 분리력' if top_sig > bot_sig else '분리력 약함, feature engineering 필요'}.")
+        top_k = st.slider("Top/Bottom K", 5, 30, 20)
+        cmp = compare_feature_groups(X, y, imp_df, top_k=top_k, bottom_k=top_k)
+        fig_imp = px.bar(imp_df.head(25), x="importance", y="feature", orientation="h", title=f"Top 25 Feature Importance ({selected_exp})")
+        fig_imp.update_layout(yaxis={"categoryorder": "total ascending"}, height=600)
+        st.plotly_chart(fig_imp, use_container_width=True)
 
-    st.subheader("심화 EDA 힌트")
-    st.dataframe(deep_eda_hints(X, y, imp_df), use_container_width=True)
+        st.markdown(
+            f"**전처리**: {POLICY_LABELS['missing'].get(cfg.missing_policy)} · "
+            f"{POLICY_LABELS['outlier'].get(cfg.outlier_policy)} · "
+            f"{POLICY_LABELS['feature'].get(cfg.feature_policy)} · "
+            f"{POLICY_LABELS['sampling'].get(cfg.sampling_policy)}"
+        )
 
-    top_feats = [f for f in imp_df.head(10)["feature"] if f in X.columns]
-    if len(top_feats) >= 2:
-        st.plotly_chart(px.imshow(X[top_feats].corr(method="spearman"), text_auto=".2f", title="Top 10 Spearman 상관"), use_container_width=True)
+        st.subheader("중요 vs 비중요 — Pass/Fail Mann-Whitney 비교")
+        if not cmp["detail"].empty:
+            st.dataframe(cmp["detail"].round(4), use_container_width=True)
+            top_sig = (cmp["detail"].loc[cmp["detail"]["group"] == "Top (중요)", "p_value"] < 0.05).mean()
+            bot_sig = (cmp["detail"].loc[cmp["detail"]["group"] == "Bottom (비중요)", "p_value"] < 0.05).mean()
+            st.markdown(f"**해석**: 중요 변수 유의 비율 {top_sig*100:.0f}% vs 비중요 {bot_sig*100:.0f}% — "
+                        f"{'중요 변수가 통계적으로 더 강한 분리력' if top_sig > bot_sig else '분리력 약함, feature engineering 필요'}.")
+
+        st.subheader("심화 EDA 힌트")
+        st.dataframe(deep_eda_hints(X, y, imp_df), use_container_width=True)
+
+        top_feats = [f for f in imp_df.head(10)["feature"] if f in X.columns]
+        if len(top_feats) >= 2:
+            st.plotly_chart(px.imshow(X[top_feats].corr(method="spearman"), text_auto=".2f", title="Top 10 Spearman 상관"), use_container_width=True)
 
 # ── Tab 3 ──
 with tab3:
     st.header("오분류 심화 분석")
     err = mis["full"]
+    cmp = None
+    imp_df = None
+    if st.session_state.get("advanced_loaded"):
+        imp_df = cached_importance(selected_exp, full_permutation=False)
+        cmp = compare_feature_groups(X, y, imp_df, top_k=20, bottom_k=20)
+    else:
+        st.info("센서 프로파일·고도화 계획은 '입력 변수 분석' 탭에서 변수 중요도를 로드한 뒤 이용할 수 있습니다.")
 
     c1, c2, c3, c4 = st.columns(4)
     c1.metric("FN", int((err["error_type"] == "FN").sum()))
@@ -189,16 +215,19 @@ with tab3:
         si = int(si)
         st.markdown(f"실제 **{'Fail' if y.iloc[si] else 'Pass'}** | proba **{oof.loc[oof['sample_idx']==si,'y_proba'].iloc[0]:.3f}**")
         st.markdown(f"**라벨 감사**: {errors.loc[errors['sample_idx']==si,'label_audit'].iloc[0]}")
-        imp_top = [f for f in imp_df.head(12)["feature"] if f in X.columns]
-        prof = pd.DataFrame({
-            "sensor": imp_top,
-            "z_vs_pass": ((X.iloc[si][imp_top] - X.loc[y == 0, imp_top].median()) / (X.loc[y == 0, imp_top].std() + 1e-9)).values,
-        })
-        st.plotly_chart(px.bar(prof, x="sensor", y="z_vs_pass", color="z_vs_pass", color_continuous_scale="RdBu_r", title=f"Sample #{si} Top 센서 z-score"), use_container_width=True)
+        if imp_df is not None:
+            imp_top = [f for f in imp_df.head(12)["feature"] if f in X.columns]
+            prof = pd.DataFrame({
+                "sensor": imp_top,
+                "z_vs_pass": ((X.iloc[si][imp_top] - X.loc[y == 0, imp_top].median()) / (X.loc[y == 0, imp_top].std() + 1e-9)).values,
+            })
+            st.plotly_chart(px.bar(prof, x="sensor", y="z_vs_pass", color="z_vs_pass", color_continuous_scale="RdBu_r", title=f"Sample #{si} Top 센서 z-score"), use_container_width=True)
 
     st.plotly_chart(px.scatter(errors, x="y_proba", y="abs_dist_threshold", color="error_subtype", hover_data=["sample_idx", "label_audit"]), use_container_width=True)
 
     st.subheader("모델 고도화 계획")
+    if cmp is None:
+        cmp = {"detail": pd.DataFrame(), "group_summary": pd.DataFrame()}
     for p in model_upgrade_plan(registry, cmp, mis):
         st.markdown(f"**{p['phase']}**")
         for a in p["actions"]:

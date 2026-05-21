@@ -1,12 +1,15 @@
 import json
 from functools import lru_cache
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
 from scipy import stats
 from sklearn.inspection import permutation_importance
 
-from src.config import EXPERIMENTS_DIR
+from src.config import EXPERIMENTS_DIR, REPORTS_DIR
+
+IMPORTANCE_DIR = REPORTS_DIR / "importance"
 from src.data_loader import load_secom
 from src.experiment.config_schema import ExperimentConfig
 from src.experiment.registry import ExperimentRegistry
@@ -42,6 +45,38 @@ def get_feature_names(X: pd.DataFrame) -> list[str]:
     return [str(c) for c in X.columns]
 
 
+def _importance_path(exp_id: str) -> Path:
+    IMPORTANCE_DIR.mkdir(parents=True, exist_ok=True)
+    return IMPORTANCE_DIR / f"{exp_id}.csv"
+
+
+def load_feature_importance(exp_id: str, *, allow_compute: bool = True) -> pd.DataFrame:
+    """Load precomputed importance, else fast MI proxy (Streamlit Cloud friendly)."""
+    path = _importance_path(exp_id)
+    if path.exists():
+        return pd.read_csv(path)
+
+    if allow_compute:
+        return compute_feature_importance(exp_id)
+
+    return fast_feature_importance()
+
+
+@lru_cache(maxsize=1)
+def fast_feature_importance() -> pd.DataFrame:
+    from sklearn.feature_selection import mutual_info_classif
+
+    X, y = load_secom()
+    X_fill = X.fillna(X.median(numeric_only=True))
+    mi = mutual_info_classif(X_fill, y, random_state=42)
+    return pd.DataFrame({
+        "feature": [str(c) for c in X.columns],
+        "importance": mi,
+        "importance_std": 0.0,
+        "method": "mutual_info",
+    }).sort_values("importance", ascending=False)
+
+
 @lru_cache(maxsize=2)
 def compute_feature_importance(exp_id: str, n_repeats: int = 5) -> pd.DataFrame:
     cfg = load_experiment_config(exp_id)
@@ -61,6 +96,7 @@ def compute_feature_importance(exp_id: str, n_repeats: int = 5) -> pd.DataFrame:
         "feature": feature_names,
         "importance": result.importances_mean,
         "importance_std": result.importances_std,
+        "method": "permutation",
     }).sort_values("importance", ascending=False)
 
 
