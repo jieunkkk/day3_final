@@ -49,9 +49,21 @@ def cached_misclassifications(exp_id: str, threshold: float):
     return analyze_misclassifications(oof, X, y, threshold)
 
 
+def _can_run_permutation() -> bool:
+    try:
+        import lightgbm  # noqa: F401
+        import xgboost  # noqa: F401
+        return True
+    except ImportError:
+        return False
+
+
 @st.cache_data(show_spinner="Feature Importance 로딩...")
 def cached_importance(exp_id: str, *, full_permutation: bool = False) -> pd.DataFrame:
     if full_permutation:
+        if not _can_run_permutation():
+            st.warning("Cloud 환경: Permutation Importance는 로컬(requirements-full.txt)에서만 가능합니다.")
+            return load_feature_importance(exp_id, allow_compute=False)
         return compute_feature_importance(exp_id, n_repeats=3)
     return load_feature_importance(exp_id, allow_compute=False)
 
@@ -158,7 +170,11 @@ def render_dashboard():
             if st.button("변수 중요도 로드", type="primary", use_container_width=True):
                 st.session_state.advanced_loaded = True
         with c_full:
-            run_full = st.checkbox("정밀 Permutation Importance (1~3분)", value=False)
+            run_full = False
+            if _can_run_permutation():
+                run_full = st.checkbox("정밀 Permutation Importance (1~3분)", value=False)
+            else:
+                st.caption("Permutation은 로컬 전용")
 
         if not st.session_state.get("advanced_loaded"):
             st.caption("실험 결과 탭은 즉시 표시됩니다. 변수 분석은 버튼을 눌러 로드하세요.")

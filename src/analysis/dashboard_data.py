@@ -5,7 +5,6 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 from scipy import stats
-from sklearn.inspection import permutation_importance
 
 from src.config import EXPERIMENTS_DIR, REPORTS_DIR
 
@@ -82,6 +81,8 @@ def fast_feature_importance() -> pd.DataFrame:
 
 @lru_cache(maxsize=2)
 def compute_feature_importance(exp_id: str, n_repeats: int = 5) -> pd.DataFrame:
+    from sklearn.inspection import permutation_importance
+
     from src.pipelines.factory import build_pipeline
 
     cfg = load_experiment_config(exp_id)
