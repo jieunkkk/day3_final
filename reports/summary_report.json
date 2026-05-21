@@ -1,0 +1,87 @@
+{
+  "n_experiments": 61,
+  "best_experiment": "E201",
+  "best_pr_auc": 0.180166101589484,
+  "top_10": [
+    {
+      "experiment_id": "E201",
+      "description": "Sampling B0 with lightgbm",
+      "pr_auc_mean": 0.180166101589484,
+      "f1_mean": 0.1793103448275862,
+      "recall_mean": 0.125,
+      "mcc_mean": 0.1650846262392285
+    },
+    {
+      "experiment_id": "E209",
+      "description": "Sampling B8 with lightgbm",
+      "pr_auc_mean": 0.180166101589484,
+      "f1_mean": 0.1793103448275862,
+      "recall_mean": 0.125,
+      "mcc_mean": 0.1650846262392285
+    },
+    {
+      "experiment_id": "E202",
+      "description": "Sampling B1 with lightgbm",
+      "pr_auc_mean": 0.1780924137653558,
+      "f1_mean": 0.2222222222222222,
+      "recall_mean": 0.2019230769230769,
+      "mcc_mean": 0.173839938862646
+    },
+    {
+      "experiment_id": "E206",
+      "description": "Sampling B5 with lightgbm",
+      "pr_auc_mean": 0.1726872748817307,
+      "f1_mean": 0.2654028436018957,
+      "recall_mean": 0.2692307692307692,
+      "mcc_mean": 0.2124113075100901
+    },
+    {
+      "experiment_id": "E211",
+      "description": "Sampling B1 with xgboost",
+      "pr_auc_mean": 0.1695382537147835,
+      "f1_mean": 0.2673267326732673,
+      "recall_mean": 0.2596153846153846,
+      "mcc_mean": 0.2170062305688027
+    },
+    {
+      "experiment_id": "E210",
+      "description": "Sampling B0 with xgboost",
+      "pr_auc_mean": 0.1695382537147835,
+      "f1_mean": 0.2673267326732673,
+      "recall_mean": 0.2596153846153846,
+      "mcc_mean": 0.2170062305688027
+    },
+    {
+      "experiment_id": "E218",
+      "description": "Sampling B8 with xgboost",
+      "pr_auc_mean": 0.1695382537147835,
+      "f1_mean": 0.2673267326732673,
+      "recall_mean": 0.2596153846153846,
+      "mcc_mean": 0.2170062305688027
+    },
+    {
+      "experiment_id": "E110",
+      "description": "Outlier ablation O3",
+      "pr_auc_mean": 0.1690885278594878,
+      "f1_mean": 0.2011834319526627,
+      "recall_mean": 0.1634615384615384,
+      "mcc_mean": 0.1631037913523458
+    },
+    {
+      "experiment_id": "E505",
+      "description": "M1 O0 F2_100 B6 SMOTETomek LGBM",
+      "pr_auc_mean": 0.168162735326495,
+      "f1_mean": 0.2578125,
+      "recall_mean": 0.3173076923076923,
+      "mcc_mean": 0.1984686394293023
+    },
+    {
+      "experiment_id": "E214",
+      "description": "Sampling B4 with xgboost",
+      "pr_auc_mean": 0.1677761273631833,
+      "f1_mean": 0.2447552447552447,
+      "recall_mean": 0.3365384615384615,
+      "mcc_mean": 0.1834005531769
+    }
+  ]
+}

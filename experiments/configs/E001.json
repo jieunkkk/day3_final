@@ -1,0 +1,14 @@
+{
+  "experiment_id": "E001",
+  "stage": 1,
+  "tier": 0,
+  "description": "Dummy majority class",
+  "missing_policy": "M1",
+  "outlier_policy": "O0",
+  "feature_policy": "F0",
+  "scale_policy": "S0",
+  "sampling_policy": "B0",
+  "model_name": "dummy",
+  "model_params": {},
+  "random_state": 42
+}

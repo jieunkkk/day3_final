@@ -1,0 +1,21 @@
+{
+  "experiment_id": "E304",
+  "stage": 4,
+  "tier": 4,
+  "description": "LGBM HPO grid 4",
+  "missing_policy": "M1",
+  "outlier_policy": "O0",
+  "feature_policy": "F2_50",
+  "scale_policy": "S0",
+  "sampling_policy": "B2",
+  "model_name": "lightgbm",
+  "model_params": {
+    "n_estimators": 500,
+    "num_leaves": 31,
+    "learning_rate": 0.01,
+    "colsample_bytree": 0.5,
+    "min_child_samples": 30,
+    "reg_alpha": 1
+  },
+  "random_state": 42
+}

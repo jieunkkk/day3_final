@@ -1,0 +1,14 @@
+{
+  "experiment_id": "E004",
+  "stage": 1,
+  "tier": 2,
+  "description": "RandomForest + M1",
+  "missing_policy": "M1",
+  "outlier_policy": "O0",
+  "feature_policy": "F0",
+  "scale_policy": "S0",
+  "sampling_policy": "B1",
+  "model_name": "random_forest",
+  "model_params": {},
+  "random_state": 42
+}

@@ -1,0 +1,11 @@
+{
+  "baseline_id": "E001",
+  "best_experiment": "E201",
+  "best_pr_auc": 0.180166101589484,
+  "friedman_top_models": {
+    "statistic": 1.399999999999996,
+    "p_value": 0.9855712644489882,
+    "significant": false
+  },
+  "n_experiments": 61
+}

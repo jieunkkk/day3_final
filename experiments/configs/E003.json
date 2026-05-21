@@ -1,0 +1,14 @@
+{
+  "experiment_id": "E003",
+  "stage": 1,
+  "tier": 1,
+  "description": "LR + M1 recommended missing",
+  "missing_policy": "M1",
+  "outlier_policy": "O0",
+  "feature_policy": "F0",
+  "scale_policy": "S1",
+  "sampling_policy": "B1",
+  "model_name": "logistic_regression",
+  "model_params": {},
+  "random_state": 42
+}

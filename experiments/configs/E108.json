@@ -1,0 +1,20 @@
+{
+  "experiment_id": "E108",
+  "stage": 2,
+  "tier": 2,
+  "description": "Outlier ablation O1",
+  "missing_policy": "M1",
+  "outlier_policy": "O1",
+  "feature_policy": "F0",
+  "scale_policy": "S0",
+  "sampling_policy": "B2",
+  "model_name": "lightgbm",
+  "model_params": {
+    "n_estimators": 500,
+    "num_leaves": 31,
+    "learning_rate": 0.05,
+    "colsample_bytree": 0.5,
+    "min_child_samples": 20
+  },
+  "random_state": 42
+}
